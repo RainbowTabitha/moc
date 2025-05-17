@@ -11,24 +11,27 @@ import Combine
 
 public struct L10nText: View {
     @State public var key: String
-    
     @State private var localized: String
-        
-    public init(_ key: String) {
+    private var service: (any Service)?
+    
+    public init(_ key: String, service: (any Service)? = nil) {
         self.key = key
         self.localized = L10nManager.shared.getString(by: key)
+        self.service = service
     }
     
     public var body: some View {
-        Text(localized)
-            .onReceive(TdApi.shared.client.updateSubject) { update in
-                if case let .option(option) = update {
-                    if option.name == "language_pack_id" {
-                        Task {
-                            self.localized = L10nManager.shared.getString(by: key)
-                        }
-                    }
+        Group {
+            Text(localized)
+        }
+        .onReceive(
+            service?.updateSubject.eraseToAnyPublisher() ?? Empty<Update, Never>().eraseToAnyPublisher()
+        ) { update in
+            if case .updateOption(let option) = update, option.name == "language_pack_id" {
+                Task {
+                    self.localized = L10nManager.shared.getString(by: key)
                 }
             }
+        }
     }
 }

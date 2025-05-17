@@ -34,25 +34,10 @@ public class L10nManager {
     
     init() {
         logger.debug("Initialized L10nManager")
-        tdApi.client.updateSubject
-            .sink { update in
-                if case let .option(option) = update {
-                    if option.name == "language_pack_id" {
-                        if case let .string(value) = option.value {
-                            Task {
-                                let languagePack = try await self.tdApi.getLanguagePackInfo(languagePackId: value.value)
-                                try await self.setLanguage(from: languagePack)
-                            }
-                        }
-                    }
-                }
-            }
-            .store(in: &subscribers)
-        
         Task {
             guard let option = try? await tdApi.getOption(
                 name: "language_pack_id") else { return }
-            if case let .string(string) = option {
+            if case .optionValueString(let string) = option {
                 guard let pack = try? await tdApi.getLanguagePackInfo(
                     languagePackId: string.value) else { return }
                 try? await self.setLanguage(from: pack)
@@ -75,23 +60,29 @@ public class L10nManager {
         
         try await TdApi.shared.setOption(
             name: "language_pack_id",
-            value: .string(.init(value: languagePack.id)))
+            value: .optionValueString(OptionValueString(value: languagePack.id)))
+    }
+    
+    public func setLanguageSync(from languagePack: LanguagePackInfo) {
+        Task {
+            try? await setLanguage(from: languagePack)
+        }
     }
     
     public func getString(
         by key: String,
         source: LocalizationSource = .automatic,
         arg: Any? = nil
-    ) -> String {
+    ) async -> String {
         switch source {
             case .strings:
                 return getLocalizableString(by: key)
             case .telegram:
-                return getTelegramString(by: key, arg: arg)
+                return await getTelegramString(by: key, arg: arg)
             case .automatic:
                 let localizable = getLocalizableString(by: key)
                 if localizable == key { // If not found
-                    return getTelegramString(by: key, arg: arg)
+                    return await getTelegramString(by: key, arg: arg)
                 } else {
                     return localizable
                 }
@@ -111,7 +102,7 @@ public class L10nManager {
         by key: String,
         from languagePackID: String? = nil,
         arg: Any? = nil
-    ) -> String {
+    ) async -> String {
         do {
             let langString = try tdApi.getLanguagePackString(
                 key: key,
@@ -121,13 +112,13 @@ public class L10nManager {
             )
             
             switch langString {
-                case let .ordinary(ordinary):
+                case .languagePackStringValueOrdinary(let ordinary):
                     if let arg {
                         return String(format: ordinary.value, arg as! CVarArg)
                     } else {
                         return ordinary.value
                     }
-                case let .pluralized(pluralized):
+                case .languagePackStringValuePluralized(let pluralized):
                     if let arg {
                         guard let intArg = arg as? Int else { return pluralized.otherValue }
                         let lastDigit = intArg % 10
@@ -153,13 +144,13 @@ public class L10nManager {
                     } else {
                         return pluralized.otherValue
                     }
-                case .deleted:
+                case .languagePackStringValueDeleted:
                     if languagePackID == "en" { // If a string doesn't exist even in English language pack
                         logger.debug("String not found in English pack, returning key")
                         return key
                     } else {
                         logger.debug("String not found in pack \(String(describing: languagePackID))")
-                        return getTelegramString(by: key, from: "en", arg: arg)
+                        return await getTelegramString(by: key, from: "en", arg: arg)
                     }
             }
         } catch {

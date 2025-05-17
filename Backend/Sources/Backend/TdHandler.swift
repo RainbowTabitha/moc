@@ -30,13 +30,7 @@ public extension TdApi {
 
         public func run(updateHandler: @escaping (Data) -> Void) {
             client.run { data, _ in
-                Task {
-                    do {
-                        updateHandler(data)
-                    } catch {
-                        logger.error(error)
-                    }
-                }
+                updateHandler(data)
             }
         }
 
@@ -67,28 +61,31 @@ public extension TdApi {
         logger.debug("Starting handler")
         
         Task {
-            #if DEBUG
-            try await shared.setLogVerbosityLevel(newVerbosityLevel: 2)
-            #else
-            try await shared.setLogVerbosityLevel(newVerbosityLevel: 0)
-            #endif
-            
-            try await shared.setOption(
-                name: "language_pack_database_path",
-                value: .optionValueString(OptionValueString(value: Constants.languagePacksDatabasePath))
-            )
-            
-            try await shared.setOption(
-                name: "localization_target",
-                value: .optionValueString(OptionValueString(value: "ios"))
-            )
-            
-            try await fetchLocalization()
+            do {
+                #if DEBUG
+                try await shared.setLogVerbosityLevel(newVerbosityLevel: 2)
+                #else
+                try await shared.setLogVerbosityLevel(newVerbosityLevel: 0)
+                #endif
+                
+                try await shared.setOption(
+                    name: "language_pack_database_path",
+                    value: .optionValueString(OptionValueString(value: Constants.languagePacksDatabasePath))
+                )
+                
+                try await shared.setOption(
+                    name: "localization_target",
+                    value: .optionValueString(OptionValueString(value: "ios"))
+                )
+                
+                try await fetchLocalization()
+            } catch {
+                logger.error(error)
+            }
         }
         
         client.run { data in
             let cache = StorageService.cache
-            
             do {
                 let update = try JSONDecoder().decode(Update.self, from: data)
                 
@@ -97,33 +94,41 @@ public extension TdApi {
                     switch update.authorizationState {
                     case .authorizationStateWaitTdlibParameters:
                         Task {
-                            var url = try FileManager.default.url(
-                                for: .applicationSupportDirectory,
-                                in: .userDomainMask,
-                                appropriateFor: nil,
-                                create: true)
-                            url.append(path: "td")
-                            try await shared.setTdlibParameters(
-                                apiHash: Constants.apiHash,
-                                apiId: Constants.apiId,
-                                applicationVersion: SystemUtils.info(key: "CFBundleShortVersionString"),
-                                databaseDirectory: url.path(),
-                                databaseEncryptionKey: nil,
-                                deviceModel: await SystemUtils.getDeviceModel(),
-                                filesDirectory: url.path(),
-                                systemLanguageCode: "en-US",
-                                systemVersion: SystemUtils.osVersionString,
-                                useChatInfoDatabase: true,
-                                useFileDatabase: true,
-                                useMessageDatabase: true,
-                                useSecretChats: false,
-                                useTestDc: false
-                            )
+                            do {
+                                var url = try FileManager.default.url(
+                                    for: .applicationSupportDirectory,
+                                    in: .userDomainMask,
+                                    appropriateFor: nil,
+                                    create: true)
+                                url.append(path: "td")
+                                try await shared.setTdlibParameters(
+                                    apiHash: Constants.apiHash,
+                                    apiId: Constants.apiId,
+                                    applicationVersion: SystemUtils.info(key: "CFBundleShortVersionString"),
+                                    databaseDirectory: url.path(),
+                                    databaseEncryptionKey: nil,
+                                    deviceModel: await SystemUtils.getDeviceModel(),
+                                    filesDirectory: url.path(),
+                                    systemLanguageCode: "en-US",
+                                    systemVersion: SystemUtils.osVersionString,
+                                    useChatInfoDatabase: true,
+                                    useFileDatabase: true,
+                                    useMessageDatabase: true,
+                                    useSecretChats: false,
+                                    useTestDc: false
+                                )
+                            } catch {
+                                logger.error(error)
+                            }
                         }
                     case .authorizationStateReady:
                         Task {
-                            try await shared.loadChats(chatList: .chatListMain, limit: 15)
-                            try await shared.loadChats(chatList: .chatListArchive, limit: 15)
+                            do {
+                                try await shared.loadChats(chatList: .chatListMain, limit: 15)
+                                try await shared.loadChats(chatList: .chatListArchive, limit: 15)
+                            } catch {
+                                logger.error(error)
+                            }
                         }
                     case .authorizationStateClosed:
                         let newRawClient = manager.createClient { data, client in
@@ -136,14 +141,14 @@ public extension TdApi {
                     }
                 case let .updateChatFolders(update):
                     try cache.deleteAll(records: Storage.ChatFolder.self)
-                    for (index, filter) in update.updateChatFolders.enumerated() {
+                    for (index, filter) in update.chatFolders.enumerated() {
                         try cache.save(record: Storage.ChatFolder(
-                            title: filter.title,
+                            title: filter.name.text.text,
                             id: filter.id,
-                            iconName: filter.iconName,
+                            iconName: filter.icon.name,
                             order: index))
                     }
-                case let .unreadChatCount(update):
+                case let .updateUnreadMessageCount(update):
                     var shouldBeAdded = true
                     let chatList = Storage.ChatList.from(tdChatList: update.chatList)
                     let records = try cache.getRecords(as: UnreadCounter.self)
@@ -162,26 +167,7 @@ public extension TdApi {
                             chatList: chatList
                         ))
                     }
-                case let .unreadMessageCount(update):
-                    var shouldBeAdded = true
-                    let chatList = Storage.ChatList.from(tdChatList: update.chatList)
-                    let records = try cache.getRecords(as: UnreadCounter.self)
-                    
-                    for record in records where chatList == record.chatList {
-                        try cache.modify(record: UnreadCounter.self, at: chatList) { record in
-                            record.messages = update.unreadCount
-                        }
-                        shouldBeAdded = false
-                    }
-                    
-                    if shouldBeAdded {
-                        try cache.save(record: UnreadCounter(
-                            chats: 0,
-                            messages: update.unreadCount,
-                            chatList: chatList
-                        ))
-                    }
-                case let .fileGenerationStart(info):
+                case let .updateFileGenerationStart(info):
                     switch info.conversion {
                     case "copy":
                         Task {
@@ -196,7 +182,8 @@ public extension TdApi {
                                 logger.debug("Copy conversion done for id \(info.generationId.rawValue)")
                                 try await shared.finishFileGeneration(error: nil, generationId: info.generationId)
                             } catch {
-                                try await shared.finishFileGeneration(error: Error(code: 400, message: error.localizedDescription), generationId: info.generationId)
+                                try? await shared.finishFileGeneration(error: Error(code: 400, message: error.localizedDescription), generationId: info.generationId)
+                                logger.error(error)
                             }
                         }
                     case "video_thumbnail":
@@ -217,16 +204,21 @@ public extension TdApi {
                                 logger.debug("File generation done for ID \(info.generationId)")
                             } catch {
                                 logger.debug("File generation failed for ID \(info.generationId)")
-                                try await shared.finishFileGeneration(error: Error(code: 400, message: error.localizedDescription), generationId: info.generationId)
+                                try? await shared.finishFileGeneration(error: Error(code: 400, message: error.localizedDescription), generationId: info.generationId)
+                                logger.error(error)
                             }
                         }
                     default:
                         break
                     }
-                case let .connectionState(update):
-                    if case .ready = update.state {
+                case let .updateConnectionState(update):
+                    if case .connectionStateReady = update.state {
                         Task {
-                            try await fetchLocalization()
+                            do {
+                                try await fetchLocalization()
+                            } catch {
+                                logger.error(error)
+                            }
                         }
                     }
                 default:
