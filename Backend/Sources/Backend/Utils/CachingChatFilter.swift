@@ -8,12 +8,18 @@
 import Storage
 import TDLibKit
 
-extension TDLibKit.ChatFilterInfo {
+extension TDLibKit.ChatFolderInfo {
     init(from cached: Storage.ChatFolder) {
         self.init(
-            iconName: cached.iconName,
+            colorId: -1,
+            hasMyInviteLinks: false,
+            icon: .init(name: cached.iconName),
             id: cached.id,
-            title: cached.title
+            isShareable: false,
+            name: .init(
+                animateCustomEmoji: false,
+                text: .init(entities: [], text: cached.title)
+            )
         )
     }
 }

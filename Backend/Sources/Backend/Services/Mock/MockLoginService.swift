@@ -10,7 +10,7 @@ import TDLibKit
 
 public class MockLoginService: LoginService {
     public func getAuthorizationState() async throws -> AuthorizationState {
-        return .ready
+        return .authorizationStateReady
     }
     
     public var updateSubject = PassthroughSubject<Update, Never>()

@@ -14,33 +14,44 @@ public class TdFoldersPrefService: FoldersPrefService {
     private var tdApi: TdApi = .shared
     
     public var updateSubject: PassthroughSubject<Update, Never> {
-        tdApi.client.updateSubject
+        let subject = PassthroughSubject<Update, Never>()
+        self.tdApi.client.run { [weak self] data in
+            guard let self = self else { return }
+            if let update = try? self.tdApi.decoder.decode(Update.self, from: data) {
+                subject.send(update)
+            }
+        }
+        return subject
     }
 
     public init() { }
 
-    public func getFilters() async throws -> [ChatFilterInfo] {
+    public func getFilters() async throws -> [ChatFolderInfo] {
         try! StorageService.cache.getRecords(as: Storage.ChatFolder.self, ordered: [Column("order").asc])
-            .map(ChatFilterInfo.init(from:))
+            .map(ChatFolderInfo.init(from:))
     }
 
-    public func getFilter(by id: Int) async throws -> TDLibKit.ChatFilter {
-        try await tdApi.getChatFilter(chatFilterId: id)
+    public func getFilter(by id: Int) async throws -> TDLibKit.ChatFolder {
+        try await tdApi.getChatFolder(chatFolderId: id)
     }
 
     public func reorderFilters(_ folders: [Int]) async throws {
-        try await tdApi.reorderChatFilters(chatFilterIds: folders, mainChatListPosition: 0)
+        try await tdApi.reorderChatFolders(chatFolderIds: folders, mainChatListPosition: 0)
     }
 
-    public func createFilter(_ filter: TDLibKit.ChatFilter) async throws {
-        _ = try await tdApi.createChatFilter(filter: filter)
+    public func createFilter(_ filter: TDLibKit.ChatFolder) async throws {
+        _ = try await tdApi.createChatFolder(folder: filter)
     }
 
     public func deleteFilter(by id: Int) async throws {
-        try await tdApi.deleteChatFilter(chatFilterId: id)
+        try await tdApi.deleteChatFolder(chatFolderId: id, leaveChatIds: [Int64(id)])
     }
 
-    public func getRecommended() async throws -> [RecommendedChatFilter] {
-        try await tdApi.getRecommendedChatFilters().chatFilters
+    public func getRecommended() async throws -> [RecommendedChatFolder] {
+        try await tdApi.getRecommendedChatFolders().chatFolders
+    }
+
+    public func leaveChat(chatId: Int64) async throws {
+        try await tdApi.leaveChat(chatId: chatId)
     }
 }

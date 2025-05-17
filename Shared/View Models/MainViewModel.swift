@@ -63,7 +63,7 @@ class MainViewModel: ObservableObject {
     }
     
     @Published var unreadCounters: [Storage.UnreadCounter] = []
-    @Published var chatFilters: [TDLibKit.ChatFilterInfo] = []
+    @Published var updateChatFolders: [TDLibKit.ChatFilterInfo] = []
     
     var mainUnreadCounter: Int {
         unreadCounters
@@ -71,7 +71,7 @@ class MainViewModel: ObservableObject {
     }
     
     var folders: [ChatFolder] {
-        return chatFilters.map { filter in
+        return updateChatFolders.map { filter in
             return ChatFolder(
                 title: filter.title,
                 id: filter.id,
@@ -150,15 +150,15 @@ class MainViewModel: ObservableObject {
                             case .closed:
 //                                isSessionTerminationAlertShown = true
                                 allChats.removeAll()
-                                chatFilters.removeAll()
+                                updateChatFolders.removeAll()
                             case .ready, .waitEncryptionKey, .waitTdlibParameters: break // do nothing
                             default:
                                 showingLoginScreen = true
                         }
                     case let .newChat(info):
                         updateNewChat(info)
-                    case let .chatFilters(info):
-                        updateChatFilters(info)
+                    case let .updateChatFolders(info):
+                        updateupdateChatFolders(info)
                     case let .unreadChatCount(info):
                         updateUnreadChatCount(info)
                     case let .chatLastMessage(info):
@@ -174,13 +174,13 @@ class MainViewModel: ObservableObject {
             .store(in: &subscribers)
         if let filters = try? service.getFilters() {
             logger.debug("Filling chat filter with cached ones: \(filters)")
-            chatFilters = filters.map { filter in
+            updateChatFolders = filters.map { filter in
                 ChatFilterInfo(iconName: filter.iconName, id: filter.id, title: filter.title)
             }
-            logger.trace("\(filters.count), \(chatFilters.count)")
+            logger.trace("\(filters.count), \(updateChatFolders.count)")
         } else {
             logger.debug("There was an issue retrieving cached chat filters (maybe empty?), using empty OrderedSet")
-            chatFilters = []
+            updateChatFolders = []
         }
         Defaults.publisher(.sidebarSize)
             .sink { value in
@@ -259,11 +259,11 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    func updateChatFilters(_ update: UpdateChatFilters) {
+    func updateupdateChatFolders(_ update: UpdateupdateChatFolders) {
         logger.debug("Chat filter update")
         
         withAnimation(.fastStartSlowStop()) {
-            chatFilters = update.chatFilters
+            updateChatFolders = update.updateChatFolders
         }
     }
 

@@ -7,12 +7,19 @@
 
 import TDLibKit
 import Combine
+import Foundation
 
 public class TdChatInspectorService: ChatInspectorService {
     private var tdApi = TdApi.shared
     
-    public var updateSubject: PassthroughSubject<TDLibKit.Update, Never> {
-        tdApi.client.updateSubject
+    public var updateSubject: PassthroughSubject<Update, Never> {
+        let subject = PassthroughSubject<Update, Never>()
+        self.tdApi.client.run { data in
+            if let update = try? JSONDecoder().decode(Update.self, from: data) {
+                subject.send(update)
+            }
+        }
+        return subject
     }
     
     public init() { }

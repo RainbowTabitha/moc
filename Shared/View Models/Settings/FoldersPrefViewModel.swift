@@ -47,10 +47,10 @@ class FoldersPrefViewModel: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { _ in } receiveValue: { update in
                 switch update {
-                    case let .chatFilters(info):
+                    case let .updateChatFolders(info):
                         DispatchQueue.main.async {
                             withAnimation {
-                                self.folders = info.chatFilters
+                                self.folders = info.updateChatFolders
                                 Task {
                                     self.recommended = try await self.service.getRecommended()
                                 }

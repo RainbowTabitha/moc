@@ -7,6 +7,7 @@
 
 import TDLibKit
 import Combine
+import Foundation
 
 public class TdLoginService: LoginService {
     public func getAuthorizationState() async throws -> AuthorizationState {
@@ -16,11 +17,17 @@ public class TdLoginService: LoginService {
     private var tdApi: TdApi = .shared
     
     public var updateSubject: PassthroughSubject<Update, Never> {
-        tdApi.client.updateSubject
+        let subject = PassthroughSubject<Update, Never>()
+        self.tdApi.client.run { data in
+            if let update = try? JSONDecoder().decode(Update.self, from: data) {
+                subject.send(update)
+            }
+        }
+        return subject
     }
 
     public func resendAuthCode() async throws {
-        try await tdApi.resendAuthenticationCode()
+        try await tdApi.resendAuthenticationCode(reason: .resendCodeReasonUserRequest)
     }
 
     public func checkAuth(phoneNumber: String) async throws {

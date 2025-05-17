@@ -17,25 +17,33 @@ public class MockChatService: ChatService {
     public func getUser(by id: Int64) async throws -> TDLibKit.User {
         // TODO: Move this to a static `mock` variable
         User(
+            accentColorId: 0,
             addedToAttachmentMenu: false,
+            backgroundCustomEmojiId: 0,
+            emojiStatus: nil,
             firstName: "First",
+            hasActiveStories: false,
+            hasUnreadActiveStories: false,
             haveAccess: true,
             id: id,
+            isCloseFriend: false,
             isContact: true,
-            isFake: false,
             isMutualContact: true,
             isPremium: true,
-            isScam: false,
             isSupport: true,
-            isVerified: true,
-            languageCode: "UA",
+            languageCode: "en_us",
             lastName: "Last",
+            paidMessageStarCount: 0,
             phoneNumber: "phone",
+            profileAccentColorId: 0,
+            profileBackgroundCustomEmojiId: 0,
             profilePhoto: nil,
             restrictionReason: "",
-            status: .empty,
-            type: .regular,
-            username: "username"
+            restrictsNewChats: false,
+            status: .userStatusEmpty,
+            type: .userTypeRegular,
+            usernames: .init(activeUsernames: ["username"], disabledUsernames: [], editableUsername: "username"),
+            verificationStatus: nil
         )
     }
     

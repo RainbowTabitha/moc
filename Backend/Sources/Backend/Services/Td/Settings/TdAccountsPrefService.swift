@@ -7,13 +7,27 @@
 
 import TDLibKit
 import Combine
+import Foundation
 
 public class TdAccountsPrefService: AccountsPrefService {
-    public var updateSubject: PassthroughSubject<TDLibKit.Update, Never> {
-        tdApi.client.updateSubject
-    }
-    
+    public let updateSubject = PassthroughSubject<TDLibKit.Update, Never>()
     public var tdApi: TdApi = .shared
+    private var updateHandlerStarted = false
+
+    public init() {
+        startUpdateHandler()
+    }
+
+    private func startUpdateHandler() {
+        guard !updateHandlerStarted else { return }
+        updateHandlerStarted = true
+        tdApi.client.run { [weak self] data in
+            guard let self = self else { return }
+            if let update = try? JSONDecoder().decode(TDLibKit.Update.self, from: data) {
+                self.updateSubject.send(update)
+            }
+        }
+    }
 
     public func logOut() async throws {
         try await tdApi.logOut()
@@ -56,6 +70,4 @@ public class TdAccountsPrefService: AccountsPrefService {
             synchronous: synchronous
         )
     }
-
-    public init() {}
 }

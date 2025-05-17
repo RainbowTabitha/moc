@@ -12,7 +12,14 @@ import Combine
 
 public class TdMainService: MainService {
     public var updateSubject: PassthroughSubject<Update, Never> {
-        tdApi.client.updateSubject
+        let subject = PassthroughSubject<Update, Never>()
+        self.tdApi.client.run { [weak self] data in
+            guard let self = self else { return }
+            if let update = try? self.tdApi.decoder.decode(Update.self, from: data) {
+                subject.send(update)
+            }
+        }
+        return subject
     }
     
     private var tdApi = TdApi.shared

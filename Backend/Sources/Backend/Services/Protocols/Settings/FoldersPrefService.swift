@@ -8,10 +8,10 @@
 import TDLibKit
 
 public protocol FoldersPrefService: Service {
-    func getFilters() async throws -> [ChatFilterInfo]
-    func getFilter(by id: Int) async throws -> TDLibKit.ChatFilter
+    func getFilters() async throws -> [ChatFolderInfo]
+    func getFilter(by id: Int) async throws -> TDLibKit.ChatFolder
     func reorderFilters(_ folders: [Int]) async throws
-    func createFilter(_ filter: TDLibKit.ChatFilter) async throws
+    func createFilter(_ filter: TDLibKit.ChatFolder) async throws
     func deleteFilter(by id: Int) async throws
-    func getRecommended() async throws -> [RecommendedChatFilter]
+    func getRecommended() async throws -> [RecommendedChatFolder]
 }
