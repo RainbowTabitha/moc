@@ -788,7 +788,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1330;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1630;
 				TargetAttributes = {
 					43807CF427E1FCEC0056A3D3 = {
 						CreatedOnToolsVersion = 13.3;
@@ -1240,6 +1240,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 2;
 			};
@@ -1248,7 +1249,6 @@
 		43807D1E27E1FCEF0056A3D3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 24;
@@ -1267,7 +1267,6 @@
 		43807D1F27E1FCEF0056A3D3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 24;
@@ -1379,6 +1378,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 2;
 			};
@@ -1387,7 +1387,6 @@
 		43BB1D2E28A4E21400C9C661 /* Nightly */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 24;
@@ -1488,10 +1487,10 @@
 		};
 		43431C8328A00BAB002A72A0 /* XCRemoteSwiftPackageReference "tdlibkit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mock-foundation/tdlibkit.git";
+			repositoryURL = "https://github.com/Swiftgram/TDLibKit.git";
 			requirement = {
 				kind = revision;
-				revision = 4188caf0a914257f7884ce0b9e4ccc077f7db941;
+				revision = 5a4cc650a56d82d5c6e08f281366ffef80aca59c;
 			};
 		};
 		4360D6E1283FE2BD00D3378F /* XCRemoteSwiftPackageReference "swift-collections" */ = {
