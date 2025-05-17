@@ -1,0 +1,3 @@
+[submodule "WhatsNewKit"]
+	path = WhatsNewKit
+	url = https://github.com/SvenTiigi/WhatsNewKit.git
